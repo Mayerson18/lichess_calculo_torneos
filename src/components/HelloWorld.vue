@@ -19,6 +19,7 @@
   export default {
     data() {
       return {
+        id: '',
         data: [
           // { 'rank': 1, 'name': 'Jesse', 'score': 0},
           // { 'rank': 2, 'name': 'John', 'score': 0},
@@ -72,25 +73,35 @@
       },
       async AddTournament() {
         try {
-          
+          this.id = this.input.split("/")[4];
           this.url = this.input;
           const res = await axios.get(this.input);
+          /* DATA PRINCIPAL DEL TORNEO */
           let parser = new DOMParser();
           const doc = parser.parseFromString(res.data, "text/html");
           const text = doc.documentElement.getElementsByTagName("script")[2].text;
           const parse = JSON.parse(text.split(";")[1].split("=")[1]);
+          const players = parse.data.nbPlayers;
+          const pages = Math.ceil(players/10);
           const data = parse.data.standing.players;
-          console.log('data :>> ', data);
+          if (pages > 1) {
+            
+            for (let i = 2; i <= pages; i++) {
+              const res2 = await axios.get(this.input + "/standing/" + i);
+              this.sumTotal(res2.data.players);
+            }
+          }
           this.sumTotal(data);
-
         } catch (error) {
           console.log('error :>> ', error);
           alert("error desconocido wey")
         }
       }
     },
-    mounted() {
+    async mounted() {
       // this.data = 
+      // const res = await axios.get("https://lichess.org/tournament/rO2jbTK0/standing/2?_=1588484557270");
+      // console.log('res :>> ', res);
     }
   }
 </script>
