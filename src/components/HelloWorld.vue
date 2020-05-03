@@ -1,58 +1,103 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+    <b-field >
+      <b-input v-model="input" placeholder="Ingrese el link del torneo"></b-input>
+      <p class="control">
+        <b-button class="button is-primary" @click="AddTournament">Agregar</b-button>
+      </p>
+    </b-field>
+    <b-button class="button is-primary" @click="sortRanks">Ordenar</b-button>
+    <b-table
+      :data="data"
+      :columns="columns"
+    ></b-table>
   </div>
 </template>
 
 <script>
-export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
+  import axios from 'axios';
+  export default {
+    data() {
+      return {
+        data: [
+          // { 'rank': 1, 'name': 'Jesse', 'score': 0},
+          // { 'rank': 2, 'name': 'John', 'score': 0},
+          // { 'rank': 3, 'name': 'Tina', 'score': 0},
+          // { 'rank': 4, 'name': 'Clarence', 'score': 0},
+          // { 'rank': 5, 'name': 'Anne', 'score': 0}
+        ],
+        columns: [
+          {
+            field: 'rank',
+            label: 'ranking',
+            width: '40',
+            numeric: true,
+            centered: true
+          },
+          {
+            field: 'name',
+            label: 'nick',
+          },
+          {
+            field: 'score',
+            label: 'Puntos',
+            numeric: true
+          }
+        ]
+      }
+    },
+    methods: {
+      sortRanks() {
+        this.data.sort(function (a, b) {
+          if (a.score < b.score) {
+            return 1;
+          }
+          if (a.score > b.score) {
+            return -1;
+          }
+          // a must be equal to b
+          return 0;
+        });
+      },
+      sumTotal(newData) {
+        const that = this
+        newData.map((dat) => {
+          const index = that.data.findIndex(player => player.name === dat.name);
+          if (index === -1) {
+            that.data.push(dat);
+          } else {
+            that.data[index].score += dat.score;
+          }
+        });
+      },
+      async AddTournament() {
+        try {
+          
+          this.url = this.input;
+          const res = await axios.get(this.input);
+          let parser = new DOMParser();
+          const doc = parser.parseFromString(res.data, "text/html");
+          const text = doc.documentElement.getElementsByTagName("script")[2].text;
+          const parse = JSON.parse(text.split(";")[1].split("=")[1]);
+          const data = parse.data.standing.players;
+          console.log('data :>> ', data);
+          this.sumTotal(data);
+
+        } catch (error) {
+          console.log('error :>> ', error);
+          alert("error desconocido wey")
+        }
+      }
+    },
+    mounted() {
+      // this.data = 
+    }
   }
-}
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
+.hello {
+  padding: 0 5%;
 }
 </style>
+
