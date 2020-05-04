@@ -85,7 +85,6 @@
           const pages = Math.ceil(players/10);
           const data = parse.data.standing.players;
           if (pages > 1) {
-            
             for (let i = 2; i <= pages; i++) {
               const res2 = await axios.get(this.input + "/standing/" + i);
               this.sumTotal(res2.data.players);
