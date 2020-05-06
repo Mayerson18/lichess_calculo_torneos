@@ -1,11 +1,49 @@
 <template>
   <div class="hello">
-    <b-field >
-      <b-input v-model="input" placeholder="Ingrese el link del torneo"></b-input>
-      <p class="control">
-        <b-button class="button is-primary" @click="AddTournament">Agregar</b-button>
-      </p>
-    </b-field>
+    <div class="flex-between">
+      <b-field >
+        <b-input v-model="input" placeholder="Ingrese el link del torneo"></b-input>
+        <p class="control">
+          <b-button class="button is-primary" @click="AddTournament">Agregar</b-button>
+        </p>
+      </b-field>
+      <!-- <b-field >
+        <b-input v-model="input" placeholder="Ingrese el link del equipo"></b-input>
+        <p class="control">
+          <b-button class="button is-primary" @click="addTeam">Agregar</b-button>
+        </p>
+      </b-field> -->
+    </div>
+    <b-collapse
+      aria-id="contentIdForA11y2"
+      class="panel"
+      animation="slide"
+      :open.sync="isOpen">
+      <div
+        slot="trigger"
+        class="panel-heading"
+        role="button"
+        aria-controls="contentIdForA11y2">
+        <strong>Torneos</strong>
+      </div>
+      <div class="panel-block flex-center">
+        <div v-for="(tournament, index) of tournaments" :key="index" class="flex-between w60">
+          <button class="button is-primary"
+            @click="detailTournament(tournament)"
+          >
+            {{tournament.fullName}}
+          </button>
+          <button class="button is-primary"
+            @click="sumTotal(tournament)">
+              Sumar Torneo
+          </button>
+          <button class="button is-danger"
+            @click="removeTournament(tournament.id)">
+              Eliminar Torneo
+          </button>
+        </div>
+      </div>
+  </b-collapse>
     <b-button class="button is-primary" @click="sortRanks">Ordenar</b-button>
     <b-table
       :data="data"
@@ -19,6 +57,9 @@
   export default {
     data() {
       return {
+        isOpen: true,
+        inputTeams: '',
+        input: '',
         id: '',
         data: [
           // { 'rank': 1, 'name': 'Jesse', 'score': 0},
@@ -40,14 +81,34 @@
             label: 'nick',
           },
           {
+            field: 'tournaments',
+            label: 'Torneos jugados',
+          },
+          {
             field: 'score',
             label: 'Puntos',
             numeric: true
           }
-        ]
+        ],
+        tournaments: [],
+        tournament_selected: {},
+        teams: []
       }
     },
     methods: {
+      addTeam() {
+        console.log('object :>> ');
+      },
+      removeTournament(id) {
+        let tournaments = JSON.parse(localStorage.getItem('tournaments'));
+        tournaments = tournaments.filter((t) => t.id !== id);
+        localStorage.setItem('tournaments', JSON.stringify(tournaments));
+        this.tournaments = tournaments;
+      },
+      detailTournament (tournament) {
+        this.tournament_selected = tournament;
+        console.log('tournament :>> ', tournament);
+      },
       sortRanks() {
         this.data.sort(function (a, b) {
           if (a.score < b.score) {
@@ -60,16 +121,31 @@
           return 0;
         });
       },
-      sumTotal(newData) {
+      sumTotalTournament(data) {
         const that = this
-        newData.map((dat) => {
+        data.map((dat) => {
           const index = that.data.findIndex(player => player.name === dat.name);
           if (index === -1) {
+            dat.tournaments = 0;
             that.data.push(dat);
           } else {
             that.data[index].score += dat.score;
+            that.data[index].tournaments++;
           }
         });
+      },
+      async sumTotal(tournament) {
+        console.log('tournament :>> ', tournament);
+        const players = tournament.nbPlayers;
+        const pages = Math.ceil(players/10);
+        const data = tournament.standing.players;
+        if (pages > 1) {
+          for (let i = 2; i <= pages; i++) {
+            const res2 = await axios.get("https://lichess.org/tournament/" + tournament.id + "/standing/" + i);
+            this.sumTotalTournament(res2.data.players);
+          }
+        }
+        this.sumTotal(data);
       },
       async AddTournament() {
         try {
@@ -80,17 +156,10 @@
           let parser = new DOMParser();
           const doc = parser.parseFromString(res.data, "text/html");
           const text = doc.documentElement.getElementsByTagName("script")[2].text;
-          const parse = JSON.parse(text.split(";")[1].split("=")[1]);
-          const players = parse.data.nbPlayers;
-          const pages = Math.ceil(players/10);
-          const data = parse.data.standing.players;
-          if (pages > 1) {
-            for (let i = 2; i <= pages; i++) {
-              const res2 = await axios.get(this.input + "/standing/" + i);
-              this.sumTotal(res2.data.players);
-            }
-          }
-          this.sumTotal(data);
+          const tournament = JSON.parse(text.split(";")[1].split("=")[1]);
+          console.log('parse :>> ', tournament);
+          this.tournaments.push(tournament.data);
+          localStorage.setItem('tournaments', JSON.stringify(this.tournaments))
         } catch (error) {
           console.log('error :>> ', error);
           alert("error desconocido wey")
@@ -98,6 +167,10 @@
       }
     },
     async mounted() {
+      let tournaments = localStorage.getItem('tournaments');
+      if (tournaments) {
+        this.tournaments = JSON.parse(tournaments);
+      }
       // this.data = 
       // const res = await axios.get("https://lichess.org/tournament/rO2jbTK0/standing/2?_=1588484557270");
       // console.log('res :>> ', res);
@@ -108,6 +181,21 @@
 <style scoped>
 .hello {
   padding: 0 5%;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  margin: 2em 0;
+}
+
+.w60 {
+  width: 60%;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
 }
 </style>
 
