@@ -43,21 +43,57 @@
           </button>
         </div>
       </div>
-  </b-collapse>
-    <b-button class="button is-primary" @click="sortRanks">Ordenar</b-button>
+    </b-collapse>
+    <b-collapse
+      aria-id="contentIdForA11y2"
+      class="panel"
+      animation="slide"
+      :open.sync="isOpen2">
+      <div
+        slot="trigger"
+        class="panel-heading"
+        role="button"
+        aria-controls="contentIdForA11y2">
+        <strong>Resultados</strong>
+      </div>
+      <div class="panel-block flex-center">
+        <div v-for="(result, index) of results" :key="index" class="flex-between w60">
+          <button class="button is-primary"
+            @click="showResult(result)"
+          >
+            {{result.fullName}}
+          </button>
+          <button class="button is-danger"
+            @click="removeResult(result.id)">
+              Eliminar Resultado
+          </button>
+        </div>
+      </div>
+    </b-collapse>
+    <div class="flex-between">
+      <b-button class="button is-primary" @click="sortRanks">Ordenar</b-button>
+      <b-button class="button is-success" @click="openResult">Guardar Resultado</b-button>
+      <!-- <b-button class="button is-primary" @click="sortRanks">Ordenar</b-button> -->
+    </div>
     <b-table
       :data="data"
       :columns="columns"
     ></b-table>
+    <sweet-modal ref="modalResult">This is an alert</sweet-modal>
   </div>
 </template>
 
 <script>
+  import { SweetModal } from 'sweet-modal-vue'
   import axios from 'axios';
   export default {
+    components: {
+      SweetModal
+    },
     data() {
       return {
         isOpen: true,
+        isOpen2: true,
         inputTeams: '',
         input: '',
         id: '',
@@ -92,10 +128,18 @@
         ],
         tournaments: [],
         tournament_selected: {},
-        teams: []
+        teams: [],
+        results: []
       }
     },
     methods: {
+      saveResult() {
+        this.results = [...this.results, this.data];
+        localStorage.setItem('results', JSON.stringify(this.data))
+      },
+      openResult() {
+        this.$refs.modalResult.open();
+      },
       addTeam() {
         console.log('object :>> ');
       },

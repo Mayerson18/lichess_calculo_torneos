@@ -13,6 +13,9 @@
     "buefy": "^0.8.17",
     "cheerio": "^1.0.0-rc.3",
     "core-js": "^3.6.4",
+    "node-sass": "^4.14.1",
+    "sass-loader": "^8.0.2",
+    "sweet-modal-vue": "^2.0.0",
     "vue": "^2.6.11"
   },
   "devDependencies": {
