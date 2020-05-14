@@ -7,12 +7,6 @@
           <b-button class="button is-primary" @click="AddTournament">Agregar</b-button>
         </p>
       </b-field>
-      <!-- <b-field >
-        <b-input v-model="input" placeholder="Ingrese el link del equipo"></b-input>
-        <p class="control">
-          <b-button class="button is-primary" @click="addTeam">Agregar</b-button>
-        </p>
-      </b-field> -->
     </div>
     <b-collapse
       aria-id="contentIdForA11y2"
@@ -79,7 +73,22 @@
       :data="data"
       :columns="columns"
     ></b-table>
-    <sweet-modal ref="modalResult">This is an alert</sweet-modal>
+    <sweet-modal ref="modalResult"></sweet-modal>
+    <sweet-modal ref="modalDetailTournament">
+      <div
+        v-for="(team, index) of teams"
+        :key="index"
+        class="flex-around"
+      >
+        <div class="left">{{ team.team }}</div>
+        <div class="right">
+          <b-button
+            class="button is-primary"
+            @click="sumTeam(team.key)"
+          >Sumar equipo</b-button>
+        </div>
+      </div>
+    </sweet-modal>
   </div>
 </template>
 
@@ -133,15 +142,19 @@
       }
     },
     methods: {
+      async sumTeam(team) {
+        const url = `https://lichess.org/tournament/${this.tournament_selected.id}/team/${team}`
+        const res = await axios.get(url);
+        const players = res.data.topPlayers;
+        this.sumTotalTournament(players);
+        console.log('players :>> ', players);
+      },
       saveResult() {
         this.results = [...this.results, this.data];
         localStorage.setItem('results', JSON.stringify(this.data))
       },
       openResult() {
         this.$refs.modalResult.open();
-      },
-      addTeam() {
-        console.log('object :>> ');
       },
       removeTournament(id) {
         let tournaments = JSON.parse(localStorage.getItem('tournaments'));
@@ -151,7 +164,13 @@
       },
       detailTournament (tournament) {
         this.tournament_selected = tournament;
-        console.log('tournament :>> ', tournament);
+        console.log('this.tournament_selected :>> ', );
+        this.$refs.modalDetailTournament.open()
+        const teams = this.tournament_selected.teamBattle.teams;
+        for (const prop in teams) {
+          this.teams.push({team: teams[prop], key: prop});
+        }
+        console.log('this.teams :>> ', this.teams);
       },
       sortRanks() {
         this.data.sort(function (a, b) {
@@ -179,17 +198,18 @@
         });
       },
       async sumTotal(tournament) {
-        console.log('tournament :>> ', tournament);
+        
         const players = tournament.nbPlayers;
         const pages = Math.ceil(players/10);
         const data = tournament.standing.players;
+        console.log('data :>> ', data);
+        this.sumTotalTournament(data);
         if (pages > 1) {
           for (let i = 2; i <= pages; i++) {
             const res2 = await axios.get("https://lichess.org/tournament/" + tournament.id + "/standing/" + i);
             this.sumTotalTournament(res2.data.players);
           }
         }
-        this.sumTotal(data);
       },
       async AddTournament() {
         try {
@@ -241,5 +261,21 @@
   display: flex;
   justify-content: center;
 }
+
+.flex-around {
+  display: flex;
+  /* justify-content: space-around; */
+  margin-bottom: 1em;
+}
+
+.left {
+  width: 40%;
+  text-align: left;
+}
+
+.right {
+  width: 50%;
+}
+
 </style>
 
